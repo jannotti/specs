@@ -4,6 +4,8 @@ $$
 \newcommand \RekeyTo {\mathrm{RekeyTo}}
 \newcommand \Heartbeat {\mathrm{hb}}
 \newcommand \PayoutsChallengeBits {\Heartbeat_\mathrm{bits}}
+\newcommand \PayoutsChallengeGracePeriod {\Heartbeat_\mathrm{grace}}
+\newcommand \PayoutsChallengeInterval {\Heartbeat_r}
 $$
 
 # Heartbeat Transaction Semantics
@@ -29,14 +31,28 @@ _eligibility_ flag (`ie`) is `True`;
 - The [_heartbeat_address_](./ledger-txn-heartbeat.md#heartbeat-address), \\( a \\),
 is _at risk_ of suspension.
 
-An account is _at risk_ of suspension if the current round (\\( r \\)) is
+Challenges begin only after the first full interval, so an account is never _at risk_
+before round \\( \PayoutsChallengeInterval \\). For a current round
+\\( r \geq \PayoutsChallengeInterval \\), let the _challenge round_ \\( c \\) be the
+most recent round that is \\( 0 \mod \PayoutsChallengeInterval \\), that is
+\\( c = r - (r \bmod \PayoutsChallengeInterval) \\).
+
+An account is _at risk_ of suspension if
 
 $$
-100\mod1000 \leq r \leq 200\mod1000,
+\frac{\PayoutsChallengeGracePeriod}{2} < r - c \leq \PayoutsChallengeGracePeriod,
 $$
 
-and the [_block seed_](./ledger-block.md#seed) of the most recent round that is
-\\( 0 \mod 1000 \\) matches \\( a \\) in the first \\( \PayoutsChallengeBits \\) bits.
+the [_block seed_](./ledger-block.md#seed) of round \\( c \\) matches \\( a \\) in the
+first \\( \PayoutsChallengeBits \\) bits, and
+
+$$
+\max(a.\mathrm{LastProposed}, a.\mathrm{LastHeartbeat}) < c.
+$$
+
+No account is _at risk_ if the `Payouts` consensus parameters in effect at round
+\\( c \\) differ from those in effect at round \\( r \\) (see the
+[Block Rewards](./ledger-parameters.md#block-rewards) parameters).
 
 If successful, the `LastHeartbeat` of the specified heartbeat address \\( a \\)
 is updated to the current round.
