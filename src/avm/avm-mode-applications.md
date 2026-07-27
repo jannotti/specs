@@ -189,6 +189,21 @@ array (only one of which can be used), with the usual convention that `0` indica
 the Application ID of the Application called by that transaction. No Box is ever
 _available_ to a Clear State Program.
 
+Given an available Box, an Application **MAY** access a Box that it owns. It **MAY**
+read a Box owned by another Application only if the owner has enabled
+`ForeignBoxReads`, or if the owner has enabled `FamilyBoxAccess` and both Applications
+have the same creator. An Application **MAY** create, modify, delete, or resize a
+Box owned by another Application only in the latter case. Any other access attempt
+**MUST** fail.
+
+A Box whose owner has enabled `FamilyBoxAccess` is treated as family-shared state
+when accessed by an Application with the same creator, including when the owner
+accesses its own Box. If an Application or any callee in a contiguous chain of
+same-creator calls accesses family-shared state, the access is attributed to each
+Application in that chain. A later non-read access to family-shared state **MUST**
+fail when a different-creator Application separates the accessing Application from
+such an ancestor on the call stack. Read-only access remains permitted.
+
 Regardless of _availability_, any attempt to access an Asset or Application with
 an ID less than \\( 256 \\) from within an Application will fail immediately. This
 avoids any ambiguity in opcodes that interpret their integer arguments as resource
